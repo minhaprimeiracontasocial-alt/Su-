@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aranha no Texto — Creative DOM Demo</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #111;
+    color: #eee;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 34px 22px 120px;
+    background: #181818;
+    min-height: 100vh;
+  }
+
+  .tag {
+    display: inline-block;
+    color: #75d7ff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 6vw, 58px);
+    line-height: 1;
+    margin: 0 0 18px;
+  }
+
+  .subtitle {
+    color: #aaa;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  article {
+    margin-top: 40px;
+    font-size: 17px;
+    line-height: 1.85;
+  }
+
+  article p { margin: 0 0 26px; }
+
+  .target {
+    position: relative;
+    color: #75d7ff;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    cursor: pointer;
+  }
+
+  .citation {
+    color: #ffd166;
+    font-weight: 700;
+  }
+
+  .spider-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+  }
+
+  #webLine {
+    position: absolute;
+    height: 1px;
+    background: rgba(255,255,255,.28);
+    transform-origin: 0 50%;
+    opacity: 0;
+  }
+
+  #spider {
+    position: absolute;
+    width: 46px;
+    height: 42px;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,.55));
+  }
+
+  .body {
+    position: absolute;
+    width: 18px;
+    height: 25px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, #555 0 8%, #161616 35% 100%);
+    left: 14px;
+    top: 9px;
+    z-index: 3;
+    border: 1px solid #777;
+  }
+
+  .head {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #090909;
+    left: 3px;
+    top: 15px;
+    z-index: 4;
+    border: 1px solid #555;
+  }
+
+  .eye {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #ff3b30;
+    top: 4px;
+    box-shadow: 0 0 5px #ff3b30;
+  }
+  .eye.a { left: 3px; }
+  .eye.b { right: 3px; }
+
+  .leg {
+    position: absolute;
+    width: 25px;
+    height: 2px;
+    background: #777;
+    left: 3px;
+    top: 20px;
+    transform-origin: 100% 50%;
+    border-radius: 2px;
+    z-index: 2;
+  }
+
+  .l1 { transform: rotate(-62deg); }
+  .l2 { transform: rotate(-40deg); top: 16px; }
+  .l3 { transform: rotate(-22deg); top: 12px; }
+  .l4 { transform: rotate(8deg); top: 10px; }
+
+  .r1 { left: 18px; transform-origin: 0 50%; transform: rotate(62deg); }
+  .r2 { left: 18px; top: 16px; transform-origin: 0 50%; transform: rotate(40deg); }
+  .r3 { left: 18px; top: 12px; transform-origin: 0 50%; transform: rotate(22deg); }
+  .r4 { left: 18px; top: 10px; transform-origin: 0 50%; transform: rotate(-8deg); }
+
+  .walking .leg { animation: step .18s infinite alternate ease-in-out; }
+  .walking .l2, .walking .r2 { animation-delay: .09s; }
+  .walking .l4, .walking .r4 { animation-delay: .13s; }
+
+  @keyframes step {
+    from { filter: brightness(.7); transform: rotate(var(--a)) translateY(0); }
+    to   { filter: brightness(1.5); transform: rotate(var(--a)) translateY(2px); }
+  }
+
+  .l1 { --a:-62deg; }
+  .l2 { --a:-40deg; }
+  .l3 { --a:-22deg; }
+  .l4 { --a:8deg; }
+  .r1 { --a:62deg; }
+  .r2 { --a:40deg; }
+  .r3 { --a:22deg; }
+  .r4 { --a:-8deg; }
+
+  .controls {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10000;
+    display: flex;
+    gap: 8px;
+  }
+
+  button {
+    border: 1px solid #444;
+    background: #222;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  button:hover { background: #333; }
+
+  .hint {
+    margin-top: 45px;
+    padding: 15px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #999;
+    font-size: 13px;
+  }
+</style>
+</head>
+
+<body>
+<div class="page">
+  <span class="tag">CREATIVE DOM EXPERIMENT</span>
+  <h1> “Grandes resultados começam com pequenos passos.”</h1>
+  <div class="subtitle">
+    Pequenas atitudes, repetidas com propósito, constroem grandes mudanças.
+
+
+    <p>
+      🧏 <span class="target">
+      Autodomínio
+Governar a si mesmo antes de tentar governar qualquer situação.
+    
+
+    
+      🏋‍♀️ Continuar mesmo quando a motivação diminui.
+      <span class="target citation"></span>
+      <span class="target citation"></span>
+      <span class="target citation"></span>
+      <span class="target citation"></span>
+      <span class="target citation"></span>.
+    </p>
+
+    <p>
+      Autodomínio • Constância • Temperança •
+    </p>
+
+    <p>
+      Ass: SuellenG
+    </p>
+
+    <div class="hint">
+      
+    </div>
+  </article>
+</div>
+
+<div class="spider-layer">
+  <div id="webLine"></div>
+
+  <div id="spider" class="walking">
+    <div class="leg l1"></div><div class="leg l2"></div>
+    <div class="leg l3"></div><div class="leg l4"></div>
+    <div class="leg r1"></div><div class="leg r2"></div>
+    <div class="leg r3"></div><div class="leg r4"></div>
+    <div class="body"></div>
+    <div class="head"><span class="eye a"></span><span class="eye b"></span></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="toggle">Pausar</button>
+  <button id="reroute">Nova rota</button>
+</div>
+
+<script>
+(() => {
+  const spider = document.getElementById("spider");
+  const line = document.getElementById("webLine");
+  const toggle = document.getElementById("toggle");
+  const reroute = document.getElementById("reroute");
+
+  let targets = [];
+  let route = [];
+  let routeIndex = 0;
+  let moving = true;
+  let x = innerWidth * .5;
+  let y = 70;
+  let from = {x, y};
+  let to = {x, y};
+  let startTime = performance.now();
+  let duration = 1200;
+
+  function collectTargets() {
+    targets = [...document.querySelectorAll(".target, h1, .tag")]
+      .map(el => {
+        const r = el.getBoundingClientRect();
+        return {
+          x: r.left + r.width / 2,
+          y: r.top + r.height / 2,
+          el
+        };
+      })
+      .filter(p => p.x > -50 && p.x < innerWidth + 50 &&
+                   p.y > -50 && p.y < innerHeight + 50);
+
+    if (targets.length < 2) return;
+
+    route = targets.sort(() => Math.random() - .5);
+    routeIndex = 0;
+    from = {x, y};
+    to = route[routeIndex];
+    startTime = performance.now();
+  }
+
+  function pointForTarget(p) {
+    const r = p.el.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2
+    };
+  }
+
+  function nextTarget() {
+    routeIndex++;
+    if (routeIndex >= route.length) {
+      collectTargets();
+      return;
+    }
+    from = {x, y};
+    to = pointForTarget(route[routeIndex]);
+    startTime = performance.now();
+
+    // A little variation makes the path feel less robotic.
+    duration = 650 + Math.random() * 900;
+  }
+
+  function drawWebLine() {
+    const dx = to.x - x;
+    const dy = to.y - y;
+    const length = Math.hypot(dx, dy);
+
+    line.style.width = length + "px";
+    line.style.left = x + "px";
+    line.style.top = y + "px";
+    line.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+    line.style.opacity = moving ? ".18" : "0";
+  }
+
+  function tick(now) {
+    if (moving && route.length) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = t < .5
+        ? 2 * t * t
+        : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+      x = from.x + (to.x - from.x) * eased;
+      y = from.y + (to.y - from.y) * eased;
+
+      // Small natural bob while walking.
+      const bob = Math.sin(now / 55) * 1.8;
+      spider.style.left = x + "px";
+      spider.style.top = (y + bob) + "px";
+
+      drawWebLine();
+
+      if (t >= 1) {
+        // Pause briefly on the element before moving again.
+        moving = false;
+        spider.classList.remove("walking");
+
+        setTimeout(() => {
+          if (!route.length) return;
+          moving = true;
+          spider.classList.add("walking");
+          nextTarget();
+        }, 500 + Math.random() * 900);
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function refreshPositions() {
+    if (!route.length) return;
+    const current = route[routeIndex];
+    if (!current) return;
+    to = pointForTarget(current);
+  }
+
+  toggle.addEventListener("click", () => {
+    moving = !moving;
+    toggle.textContent = moving ? "Pausar" : "Continuar";
+    spider.classList.toggle("walking", moving);
+    if (moving) {
+      from = {x, y};
+      startTime = performance.now();
+    }
+  });
+
+  reroute.addEventListener("click", collectTargets);
+  addEventListener("scroll", refreshPositions, {passive:true});
+  addEventListener("resize", () => {
+    collectTargets();
+  });
+
+  collectTargets();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
